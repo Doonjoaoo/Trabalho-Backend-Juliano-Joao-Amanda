@@ -346,4 +346,107 @@ input:invalid:focus, textarea:invalid:focus {
 
 .produto-card, .carrinho-item, .item-resumo {
     animation: fadeIn 0.3s ease-out;
+}
+
+/* Estilos para as abas */
+.abas-navegacao {
+    display: flex;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.aba-btn {
+    background: none;
+    border: none;
+    padding: 1rem 2rem;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.aba-btn:hover {
+    color: #2c3e50;
+    background-color: #f8f9fa;
+}
+
+.aba-btn.ativa {
+    color: #27ae60;
+    border-bottom-color: #27ae60;
+    font-weight: bold;
+}
+
+.aba-conteudo {
+    display: none;
+    padding: 2rem 0;
+}
+
+.aba-conteudo.ativa {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Estilos para campos do cartão */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.btn-proximo, .btn-finalizar-compra {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn-proximo:hover, .btn-finalizar-compra:hover {
+    background-color: #219a52;
+}
+
+.btn-finalizar-compra {
+    background-color: #e74c3c;
+    font-weight: bold;
+}
+
+.btn-finalizar-compra:hover {
+    background-color: #c0392b;
+}
+
+/* Melhorias visuais para campos de cartão */
+input[name="numero-cartao"] {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+input[name="validade"], input[name="cvv"] {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+}
+
+/* Responsividade para as abas */
+@media (max-width: 768px) {
+    .abas-navegacao {
+        flex-direction: column;
+    }
+    
+    .aba-btn {
+        text-align: center;
+        border-bottom: none;
+        border-right: 3px solid transparent;
+    }
+    
+    .aba-btn.ativa {
+        border-right-color: #27ae60;
+        border-bottom-color: transparent;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
 } 
