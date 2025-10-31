@@ -2,17 +2,24 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Instala dependências
+# Instala todas as dependências (incluindo dev para build)
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci
 
-# Copia código
-COPY . .
+# Copia código e arquivos de configuração
+COPY tsconfig.json ./
+COPY src ./src
+
+# Build TypeScript
+RUN npm run build
+
+# Remove dependências de desenvolvimento após build
+RUN npm ci --omit=dev
 
 # Exposição da porta da API
 EXPOSE 3001
 
 # Comando de inicialização
-CMD ["node", "server.js"]
+CMD ["node", "dist/server.js"]
 
 

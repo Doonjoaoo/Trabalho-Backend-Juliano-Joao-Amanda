@@ -1,5 +1,6 @@
 node_modules
 npm-debug.log
+dist
 
 # Banco local fora do volume
 *.sqlite
@@ -8,5 +9,6 @@ npm-debug.log
 .git
 .DS_Store
 **/tmp
+.env
 
 

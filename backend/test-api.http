@@ -1,0 +1,78 @@
+### Arquivo de testes HTTP para VS Code (REST Client Extension)
+### Instale a extensão "REST Client" no VS Code
+### Clique em "Send Request" acima de cada requisição
+
+@baseUrl = http://localhost:3001
+@token = 
+
+### 1. Healthcheck
+GET {{baseUrl}}/api/health
+
+### 2. Listar todos os produtos
+GET {{baseUrl}}/api/products
+
+### 3. Obter produto por ID
+GET {{baseUrl}}/api/products/1
+
+### 4. Consultar estoque por SKU
+GET {{baseUrl}}/api/stock?sku=IPHN-15-PNK
+
+### 5. Consultar estoque por ID
+GET {{baseUrl}}/api/stock?id=1
+
+### 6. Registrar novo usuário
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "teste@example.com",
+  "password": "senha123",
+  "name": "Usuário Teste"
+}
+
+### 7. Login (admin padrão)
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+### 8. Salvar token (execute o login primeiro)
+@token = {{login.response.body.token}}
+
+### 9. Definir estoque absoluto (PUT) - Requer autenticação admin
+PUT {{baseUrl}}/api/products/1/stock
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "stock": 100
+}
+
+### 10. Ajustar estoque (PATCH, delta -5) - Requer autenticação admin
+PATCH {{baseUrl}}/api/products/1/stock
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "delta": -5
+}
+
+### 11. Tentar atualizar estoque sem token (deve falhar)
+PUT {{baseUrl}}/api/products/1/stock
+Content-Type: application/json
+
+{
+  "stock": 50
+}
+
+### 12. Acessar documentação Swagger
+GET {{baseUrl}}/api/docs
+
+### 13. Listar produtos (formato HTML)
+GET {{baseUrl}}/api/products
+Accept: text/html
+
