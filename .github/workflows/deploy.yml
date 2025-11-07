@@ -1,0 +1,95 @@
+name: Deploy API e Frontend
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend API
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Fazer login no Docker Hub (opcional)
+        if: env.DOCKER_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build e Push Docker Image (Backend)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: sitevendass-backend:latest
+          cache-from: type=registry,ref=sitevendass-backend:latest
+          cache-to: type=inline
+      
+      - name: Deploy Backend (exemplo com VPS/Cloud)
+        run: |
+          echo "⚠️  Configure o deploy real aqui"
+          echo "Exemplos:"
+          echo "  - Deploy no VPS via SSH"
+          echo "  - Deploy no Railway/Render/Heroku"
+          echo "  - Deploy no AWS/GCP/Azure"
+          echo ""
+          echo "Para deploy real, você precisa:"
+          echo "1. Configurar secrets no GitHub:"
+          echo "   - JWT_SECRET"
+          echo "   - DEPLOY_HOST (se SSH)"
+          echo "   - DEPLOY_USER (se SSH)"
+          echo "   - SSH_KEY (se SSH)"
+          echo ""
+          echo "2. Configurar servidor de deploy"
+          echo "3. Executar: docker-compose up -d --build"
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Deploy Frontend (exemplo com GitHub Pages)
+        run: |
+          echo "⚠️  Configure o deploy real aqui"
+          echo ""
+          echo "Opções de deploy do frontend:"
+          echo "1. GitHub Pages (gratuito para repositórios públicos)"
+          echo "2. Netlify"
+          echo "3. Vercel"
+          echo "4. Cloudflare Pages"
+          echo "5. Servidor próprio"
+          echo ""
+          echo "Para GitHub Pages:"
+          echo "1. Vá em Settings > Pages"
+          echo "2. Selecione branch main e pasta /"
+          echo "3. Configure CORS na API para aceitar o domínio do GitHub Pages"
+          echo ""
+          echo "⚠️  IMPORTANTE: Atualize API_BASE no frontend para a URL da API em produção"
+
+  notify:
+    name: Notificação de Deploy
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
+    
+    steps:
+      - name: Status do Deploy
+        run: |
+          echo "✅ Pipeline de deploy executado"
+          echo "⚠️  Configure os steps de deploy reais acima"
+          echo "📝 Documentação completa no README.md"
+
+

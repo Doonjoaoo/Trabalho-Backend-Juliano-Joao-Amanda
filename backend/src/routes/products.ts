@@ -10,11 +10,15 @@ const router = express.Router();
  *   get:
  *     summary: Listar todos os produtos
  *     tags: [Produtos]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de produtos
+ *       401:
+ *         description: Não autenticado
  */
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', authenticateToken, async (_req: Request, res: Response): Promise<void> => {
   try {
     const products = await Product.findAll({ order: [['id', 'ASC']] });
     const wantsHtml = (_req.headers['accept'] || '').includes('text/html');
@@ -89,10 +93,72 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
 
 /**
  * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Criar novo produto (admin)
+ *     tags: [Produtos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sku
+ *               - name
+ *               - stock
+ *             properties:
+ *               sku:
+ *                 type: string
+ *                 example: "PROD-NEW-001"
+ *               name:
+ *                 type: string
+ *                 example: "Novo Produto"
+ *               stock:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 10
+ *     responses:
+ *       201:
+ *         description: Produto criado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       403:
+ *         description: Acesso negado
+ */
+router.post('/', authenticateToken, requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { sku, name, stock } = req.body;
+
+    if (!sku || !name || typeof stock !== 'number' || stock < 0) {
+      res.status(400).json({ error: 'sku, name e stock (>= 0) são obrigatórios' });
+      return;
+    }
+
+    const existingProduct = await Product.findOne({ where: { sku } });
+    if (existingProduct) {
+      res.status(400).json({ error: 'SKU já existe' });
+      return;
+    }
+
+    const product = await Product.create({ sku, name, stock });
+    res.status(201).json(product);
+  } catch (error) {
+    console.error('Erro ao criar produto:', error);
+    res.status(500).json({ error: 'Erro ao criar produto' });
+  }
+});
+
+/**
+ * @swagger
  * /api/products/{id}:
  *   get:
  *     summary: Obter produto por ID
  *     tags: [Produtos]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -104,8 +170,10 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
  *         description: Produto encontrado
  *       404:
  *         description: Produto não encontrado
+ *       401:
+ *         description: Não autenticado
  */
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', authenticateToken, async (req: Request, res: Response): Promise<void> => {
   try {
     const id = Number(req.params.id);
     const product = await Product.findByPk(id);
@@ -240,6 +308,123 @@ router.patch('/:id/stock', authenticateToken, requireAdmin, async (req: Request,
   } catch (error) {
     console.error('Erro ao ajustar estoque:', error);
     res.status(500).json({ error: 'Erro ao ajustar estoque' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   put:
+ *     summary: Atualizar produto completo (admin)
+ *     tags: [Produtos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sku
+ *               - name
+ *               - stock
+ *             properties:
+ *               sku:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               stock:
+ *                 type: integer
+ *                 minimum: 0
+ *     responses:
+ *       200:
+ *         description: Produto atualizado
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Produto não encontrado
+ *       403:
+ *         description: Acesso negado
+ */
+router.put('/:id', authenticateToken, requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const { sku, name, stock } = req.body;
+
+    if (!sku || !name || typeof stock !== 'number' || stock < 0) {
+      res.status(400).json({ error: 'sku, name e stock (>= 0) são obrigatórios' });
+      return;
+    }
+
+    const product = await Product.findByPk(id);
+    if (!product) {
+      res.status(404).json({ error: 'Produto não encontrado' });
+      return;
+    }
+
+    // Verifica se SKU já existe em outro produto
+    const existingProduct = await Product.findOne({ where: { sku } });
+    if (existingProduct && existingProduct.id !== id) {
+      res.status(400).json({ error: 'SKU já existe em outro produto' });
+      return;
+    }
+
+    product.sku = sku;
+    product.name = name;
+    product.stock = stock;
+    await product.save();
+
+    res.json(product);
+  } catch (error) {
+    console.error('Erro ao atualizar produto:', error);
+    res.status(500).json({ error: 'Erro ao atualizar produto' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   delete:
+ *     summary: Deletar produto (admin)
+ *     tags: [Produtos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Produto deletado com sucesso
+ *       404:
+ *         description: Produto não encontrado
+ *       403:
+ *         description: Acesso negado
+ */
+router.delete('/:id', authenticateToken, requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id);
+    const product = await Product.findByPk(id);
+    
+    if (!product) {
+      res.status(404).json({ error: 'Produto não encontrado' });
+      return;
+    }
+
+    await product.destroy();
+    res.json({ message: 'Produto deletado com sucesso', id });
+  } catch (error) {
+    console.error('Erro ao deletar produto:', error);
+    res.status(500).json({ error: 'Erro ao deletar produto' });
   }
 });
 

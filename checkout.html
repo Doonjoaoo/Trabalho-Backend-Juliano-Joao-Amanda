@@ -12,6 +12,8 @@
             <li><a href="index.html">Produtos</a></li>
             <li><a href="carrinho.html">Carrinho</a></li>
             <li><a href="checkout.html" class="active">Finalizar Compra</a></li>
+            <li><a href="login.html" id="login-link">Login</a></li>
+            <li><a href="#" id="logout-link" style="display:none;">Sair</a></li>
         </ul>
     </nav>
 
@@ -132,6 +134,37 @@
     </main>
 
     <script>
+        const API_BASE = 'http://localhost:3001';
+        
+        // Verifica autenticação ao carregar
+        function checkAuth() {
+            const token = localStorage.getItem('jwt_token');
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            
+            if (token && user) {
+                // Mostra link de logout e esconde login
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'block';
+            } else {
+                // Redireciona para login se não estiver autenticado
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // Função de logout
+        function handleLogout(event) {
+            event.preventDefault();
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+        
+        // Event listener para logout
+        document.getElementById('logout-link').addEventListener('click', handleLogout);
+        
+        // Verifica autenticação ao carregar
+        checkAuth();
+        
         // Função para formatar preço em Real
         function formatarPreco(valor) {
             return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

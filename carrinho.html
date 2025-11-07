@@ -12,6 +12,8 @@
             <li><a href="index.html">Produtos</a></li>
             <li><a href="carrinho.html" class="active">Carrinho</a></li>
             <li><a href="checkout.html">Finalizar Compra</a></li>
+            <li><a href="login.html" id="login-link">Login</a></li>
+            <li><a href="#" id="logout-link" style="display:none;">Sair</a></li>
         </ul>
     </nav>
 
@@ -104,6 +106,37 @@
 
     <!-- Script melhorado para mostrar os produtos selecionados -->
     <script>
+        const API_BASE = 'http://localhost:3001';
+        
+        // Verifica autenticação ao carregar
+        function checkAuth() {
+            const token = localStorage.getItem('jwt_token');
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            
+            if (token && user) {
+                // Mostra link de logout e esconde login
+                document.getElementById('login-link').style.display = 'none';
+                document.getElementById('logout-link').style.display = 'block';
+            } else {
+                // Redireciona para login se não estiver autenticado
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // Função de logout
+        function handleLogout(event) {
+            event.preventDefault();
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+        
+        // Event listener para logout
+        document.getElementById('logout-link').addEventListener('click', handleLogout);
+        
+        // Verifica autenticação ao carregar
+        checkAuth();
+        
         let total = 0;
         let temProdutos = false;
 
@@ -115,12 +148,14 @@
         // Função para carregar carrinho do localStorage
         function carregarCarrinho() {
             const carrinho = JSON.parse(localStorage.getItem('carrinho') || '{}');
+            console.log('🛒 Carrinho carregado do localStorage:', carrinho);
             
             // Verifica cada produto
             for (let i = 1; i <= 5; i++) {
                 const produto = carrinho[`prod${i}`];
+                const item = document.getElementById('item' + i);
+                
                 if (produto && produto.selecionado && produto.quantidade > 0) {
-                    const item = document.getElementById('item' + i);
                     const subtotal = produto.preco * produto.quantidade;
                     
                     item.style.display = 'block';
@@ -132,14 +167,30 @@
                     item.querySelector('input[name="nome' + i + '"]').value = produto.nome;
                     item.querySelector('input[name="preco' + i + '"]').value = produto.preco;
                     
+                    // Remove subtotal anterior se existir
+                    const subtotalAnterior = item.querySelector('.subtotal');
+                    if (subtotalAnterior) {
+                        subtotalAnterior.remove();
+                    }
+                    
                     // Adiciona o subtotal ao item
                     const subtotalElement = document.createElement('p');
+                    subtotalElement.className = 'subtotal';
                     subtotalElement.textContent = `Subtotal: ${formatarPreco(subtotal)}`;
                     item.querySelector('.produto-info').appendChild(subtotalElement);
                     
                     total += subtotal;
                     temProdutos = true;
+                    
+                    console.log(`✅ Produto ${i} adicionado: ${produto.nome} x${produto.quantidade}`);
+                } else {
+                    // Garante que o item está escondido se não foi selecionado
+                    item.style.display = 'none';
                 }
+            }
+            
+            if (!temProdutos) {
+                console.warn('⚠️ Nenhum produto encontrado no carrinho');
             }
         }
 

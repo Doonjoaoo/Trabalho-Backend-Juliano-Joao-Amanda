@@ -36,3 +36,7 @@ export function setupSwagger(app: Express): void {
   console.log(`📚 Swagger UI disponível em http://localhost:${process.env.PORT || 3001}/api/docs`);
 }
 
+
+
+
+

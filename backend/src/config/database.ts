@@ -29,16 +29,41 @@ export async function connectDatabase(): Promise<void> {
     
     if (!tablesExist) {
       // Primeira vez: cria as tabelas
+      console.log('📝 Criando tabelas pela primeira vez...');
       await sequelize.sync({ force: true });
       console.log('✅ Tabelas criadas.');
     } else {
-      // Tabelas já existem: tenta sincronizar sem forçar
+      // Tabelas já existem: verifica se a estrutura está compatível
       try {
-        await sequelize.sync({ alter: false });
-        console.log('✅ Modelos sincronizados com o banco de dados.');
-      } catch (syncError) {
-        // Se falhar, recria as tabelas (dados serão perdidos)
-        console.warn('⚠️ Erro ao sincronizar, recriando tabelas...');
+        // Verifica se a tabela users tem a coluna 'login'
+        const [columns] = await sequelize.query(
+          "PRAGMA table_info(users)"
+        ) as [Array<{name: string, type: string}>, unknown];
+        
+        const hasLoginColumn = columns.some((col: {name: string}) => col.name === 'login');
+        const hasEmailColumn = columns.some((col: {name: string}) => col.name === 'email');
+        
+        if (!hasLoginColumn) {
+          console.warn('⚠️ Estrutura do banco desatualizada (falta coluna "login"). Recriando tabelas...');
+          await sequelize.sync({ force: true });
+          console.log('✅ Tabelas recriadas com estrutura atualizada.');
+        } else {
+          // Estrutura parece compatível, tenta sincronizar
+          try {
+            await sequelize.sync({ alter: true });
+            console.log('✅ Modelos sincronizados com o banco de dados.');
+          } catch (syncError: any) {
+            // Se falhar, recria as tabelas (dados serão perdidos)
+            console.warn('⚠️ Erro ao sincronizar estrutura:', syncError.message);
+            console.warn('⚠️ Recriando tabelas com estrutura atualizada...');
+            await sequelize.sync({ force: true });
+            console.log('✅ Tabelas recriadas.');
+          }
+        }
+      } catch (checkError: any) {
+        // Se houver erro ao verificar, recria tudo
+        console.warn('⚠️ Erro ao verificar estrutura do banco:', checkError.message);
+        console.warn('⚠️ Recriando tabelas...');
         await sequelize.sync({ force: true });
         console.log('✅ Tabelas recriadas.');
       }
